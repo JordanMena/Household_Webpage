@@ -1,0 +1,8 @@
+# Change sidebar on recipes pages to be tags
+# Add combine tags functionality to tags page
+# Refactor users/recipes
+# Make recipe addition/modification/deletion require user login
+# Update user registration process so that admin has to accept registration requests
+
+
+

@@ -113,6 +113,7 @@ def recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     return render_template('recipe.html', title=recipe.name, recipe=recipe)
 
+
 @users.route("/recipes")
 def recipes():
     page = request.args.get('page', 1, type=int)
@@ -190,6 +191,17 @@ def tag(tag_id):
                            page_list=page_nums, current_page=page)
 
 
+@users.route("/combine_tags/<string:tag1>_and_<string:tag2>")
+def combine_tags(tag1, tag2):
+    combined_tags = [tag1, tag2]
+    recipes = db.session.query(Recipe)
+    for tag in combined_tags:
+        recipes = recipes.filter(Recipe.tags.any(Tag.name.startswith(tag)))
+    print(recipes)
+    return render_template('combine_tags.html', recipes=recipes, tag1=tag1, tag2=tag2)
+
+
+# Make the recipe tags always available through g since they are required in the routeless recipes_layout.html template
 @users.before_app_request
 def get_recipe_tags():
     g.recipe_tags = Tag.query.order_by(Tag.id)

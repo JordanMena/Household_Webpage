@@ -115,7 +115,7 @@
                 {% endif %}
             </div>
             <div class="form-group">
-                {{ form.tags.label(class="form-control-label") }}
+                {{ form.tags.label(class="form-control-label") }}<p class="text-muted">(Separate with '|')</p>
                 {% if form.tags.errors %}
                 {{ form.tags(class="form-control form-control-lg is-invalid") }}
                 <div class="invalid-feedback">

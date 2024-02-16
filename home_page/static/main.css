@@ -13,12 +13,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .site-header .navbar-brand {
-    color: #fbe742;
-    font-size:1.50rem;
+    color: #fb8942;
+    font-size:1.75rem;
 }
 
 .site-header .navbar-brand:hover{
-    color: #fbe742;
+    color: #fb8942;
 }
 
 .site-header .navbar-nav .nav-link {

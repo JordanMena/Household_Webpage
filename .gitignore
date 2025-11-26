@@ -1,5 +1,6 @@
 venv/
 *.db
 *.png
+!home_page/static/site_logo.png
 *.jpg
-__pycache__/
+__pycache__

@@ -27,26 +27,52 @@
 
 <div class="content-section">
     <h3>Existing Tags</h3>
-    <p class="text-muted">Click the X to delete a tag.</p>
+    <p class="text-muted">Click the tag name to change its color, or the X to delete it.</p>
     <div class="d-flex flex-wrap">
         {% for tag in tags %}
         <div class="m-1">
-            {% if tag.name == 'vegetarian' %}
-            <span class="badge badge-success p-2">
-                {% elif tag.name == 'meat' %}
-                <span class="badge badge-danger p-2">
-                    {% else %}
-                    <span class="badge badge-primary p-2">
-                        {% endif %}
-                        {{ tag.name }}
-                        <button type="button" class="close ml-2 text-white" aria-label="Close" data-toggle="modal"
-                            data-target="#deleteModal{{ tag.id }}">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </span>
+            <span class="badge badge-{{ tag.color }} p-2">
+                <a href="#" class="text-white text-decoration-none" data-toggle="modal"
+                    data-target="#colorModal{{ tag.id }}">
+                    {{ tag.name }}
+                </a>
+                <button type="button" class="close ml-2 text-white" aria-label="Close" data-toggle="modal"
+                    data-target="#deleteModal{{ tag.id }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </span>
         </div>
 
-        <!-- Modal -->
+        <!-- Color Modal -->
+        <div class="modal fade" id="colorModal{{ tag.id }}" tabindex="-1" role="dialog"
+            aria-labelledby="colorModalLabel{{ tag.id }}" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="colorModalLabel{{ tag.id }}">Select Color for "{{ tag.name }}"</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Choose a color:</p>
+                        <div class="d-flex flex-wrap justify-content-center">
+                            {% for color in ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light',
+                            'dark'] %}
+                            <form action="{{ url_for('users.update_tag_color', tag_id=tag.id) }}" method="POST"
+                                class="m-1">
+                                <input type="hidden" name="color" value="{{ color }}">
+                                <button type="submit" class="btn btn-{{ color }} p-3 border"
+                                    style="width: 50px; height: 50px;"></button>
+                            </form>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Modal -->
         <div class="modal fade" id="deleteModal{{ tag.id }}" tabindex="-1" role="dialog"
             aria-labelledby="deleteModalLabel{{ tag.id }}" aria-hidden="true">
             <div class="modal-dialog" role="document">

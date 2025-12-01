@@ -225,6 +225,20 @@ def delete_tag(tag_id):
     return redirect(url_for('users.manage_tags'))
 
 
+@users.route("/tag/<int:tag_id>/update_color", methods=['POST'])
+@login_required
+def update_tag_color(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    new_color = request.form.get('color')
+    if new_color in ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark']:
+        tag.color = new_color
+        db.session.commit()
+        flash('Tag color updated!', 'success')
+    else:
+        flash('Invalid color selected.', 'danger')
+    return redirect(url_for('users.manage_tags'))
+
+
 # Make the recipe tags always available through g since they are required in the routeless recipes_layout.html template
 @users.before_app_request
 def get_recipe_tags():

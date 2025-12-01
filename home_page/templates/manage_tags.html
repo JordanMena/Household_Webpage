@@ -1,0 +1,75 @@
+{% extends "recipes_layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Manage Tags</legend>
+            <div class="form-group">
+                {{ form.name.label(class="form-control-label") }}
+                {% if form.name.errors %}
+                {{ form.name(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.name.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                {{ form.name(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+        </fieldset>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-outline-info") }}
+        </div>
+    </form>
+</div>
+
+<div class="content-section">
+    <h3>Existing Tags</h3>
+    <p class="text-muted">Click the X to delete a tag.</p>
+    <div class="d-flex flex-wrap">
+        {% for tag in tags %}
+        <div class="m-1">
+            {% if tag.name == 'vegetarian' %}
+            <span class="badge badge-success p-2">
+                {% elif tag.name == 'meat' %}
+                <span class="badge badge-danger p-2">
+                    {% else %}
+                    <span class="badge badge-primary p-2">
+                        {% endif %}
+                        {{ tag.name }}
+                        <button type="button" class="close ml-2 text-white" aria-label="Close" data-toggle="modal"
+                            data-target="#deleteModal{{ tag.id }}">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </span>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="deleteModal{{ tag.id }}" tabindex="-1" role="dialog"
+            aria-labelledby="deleteModalLabel{{ tag.id }}" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel{{ tag.id }}">Delete Tag?</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete the tag "{{ tag.name }}"? This action cannot be undone.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <form action="{{ url_for('users.delete_tag', tag_id=tag.id) }}" method="POST">
+                            <input class="btn btn-danger" type="submit" value="Delete">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}

@@ -3,7 +3,7 @@ from flask_login import login_user, current_user, logout_user, login_required
 from home_page import bcrypt, db
 from home_page.models import User, Post, Recipe, Tag
 from home_page.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
-                                   RequestResetForm, ResetPasswordForm, AddRecipeForm)
+                                   RequestResetForm, ResetPasswordForm, AddRecipeForm, AddTagForm)
 from home_page.users.utils import (save_profile_pic, save_recipe_photo, send_reset_email,
                                    paginate_list, iter_pages)
 
@@ -199,6 +199,30 @@ def combine_tags(tag1, tag2):
         recipes = recipes.filter(Recipe.tags.any(Tag.name.startswith(tag)))
     print(recipes)
     return render_template('combine_tags.html', recipes=recipes, tag1=tag1, tag2=tag2)
+
+
+@users.route("/manage_tags", methods=['GET', 'POST'])
+@login_required
+def manage_tags():
+    form = AddTagForm()
+    if form.validate_on_submit():
+        tag = Tag.get_or_create(form.name.data.lower())
+        db.session.add(tag)
+        db.session.commit()
+        flash('Tag added!', 'success')
+        return redirect(url_for('users.manage_tags'))
+    tags = Tag.query.order_by(Tag.name).all()
+    return render_template('manage_tags.html', title='Manage Tags', tags=tags, form=form)
+
+
+@users.route("/tag/<int:tag_id>/delete", methods=['POST'])
+@login_required
+def delete_tag(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    db.session.delete(tag)
+    db.session.commit()
+    flash('Tag has been deleted.', 'success')
+    return redirect(url_for('users.manage_tags'))
 
 
 # Make the recipe tags always available through g since they are required in the routeless recipes_layout.html template

@@ -135,3 +135,8 @@ class AddRecipeForm(FlaskForm):
     tags = TagListField('Tags', separator='|', validators=[])
     submit = SubmitField('Post Recipe')
 
+
+class AddTagForm(FlaskForm):
+    name = StringField('Tag Name', validators=[DataRequired(), Length(max=20)])
+    submit = SubmitField('Add Tag')
+

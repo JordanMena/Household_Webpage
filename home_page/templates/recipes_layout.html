@@ -1,19 +1,20 @@
 {% extends "layout.html" %}
 {% block sidebar %}
-    {{ super() }}
-    <div class="col-md-4">
-        <div class="content-section">
-            <h3>Recipe Tags</h3>
-            <p class='text-muted'>Browse By Recipe Tags</p>
-            {% for tag in g.recipe_tags %}
-            {% if tag.name == 'vegetarian' %}
-            <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-success">{{ tag.name }}</a>
-            {% elif tag.name == 'meat' %}
-            <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-danger">{{ tag.name }}</a>
-            {% else %}
-            <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-primary">{{ tag.name }}</a>
-            {% endif %}
-            {% endfor %}
-        </div>
+{{ super() }}
+<div class="col-md-4">
+    <div class="content-section">
+        <h3>Recipe Tags</h3>
+        <p class='text-muted'>Browse By Recipe Tags</p>
+        <p><a href="{{ url_for('users.manage_tags') }}">Manage Tags</a></p>
+        {% for tag in g.recipe_tags %}
+        {% if tag.name == 'vegetarian' %}
+        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-success">{{ tag.name }}</a>
+        {% elif tag.name == 'meat' %}
+        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-danger">{{ tag.name }}</a>
+        {% else %}
+        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-primary">{{ tag.name }}</a>
+        {% endif %}
+        {% endfor %}
     </div>
+</div>
 {% endblock %}

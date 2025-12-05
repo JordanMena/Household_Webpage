@@ -1,39 +1,36 @@
 {% extends "recipes_layout.html" %}
 {% block content %}
-    <h1>Recipes</h1>
-    <div>
-        <a class="btn btn-light btn-sm mt-1 mb-1" href="{{ url_for('users.new_recipe') }}">New Recipe</a>
+<h1>Recipes</h1>
+<div>
+    <a class="btn btn-info btn-sm mt-1 mb-1" href="{{ url_for('users.new_recipe') }}">New Recipe</a>
+</div>
+<hr>
+{% for recipe in recipes.items %}
+<article class="media content-section">
+    <div class="media-body">
+        <h2><a class="article-title" href="{{ url_for('users.recipe', recipe_id=recipe.id) }}">{{ recipe.name }}</a>
+        </h2>
+        <img class="rounded article-img w-25 h-25"
+            src="{{ url_for('static', filename='recipe_photos/' + recipe.image_file) }}">
+        {% for tag in recipe.tags %}
+        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-{{ tag.color }} align-top">{{ tag.name
+            }}</a>
+        {% endfor %}
+        <p class="article-content mt-2"> {{ recipe.description }} </p>
+        <hr>
+        <p class="article-content"><i> From {{ recipe.source }} </i></p>
     </div>
-    <hr>
-    {% for recipe in recipes.items %}
-        <article class="media content-section">
-            <div class="media-body">
-                <h2><a class="article-title" href="{{ url_for('users.recipe', recipe_id=recipe.id) }}">{{ recipe.name }}</a></h2>
-                <img class="rounded article-img w-25 h-25" src="{{ url_for('static', filename='recipe_photos/' + recipe.image_file) }}">
-                {% for tag in recipe.tags %}
-                    {% if tag.name == 'vegetarian' %}
-                        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-success align-top">{{ tag.name }}</a>
-                    {% elif tag.name == 'meat' %}
-                        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-danger align-top">{{ tag.name }}</a>
-                    {% else %}
-                        <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-primary align-top">{{ tag.name }}</a>
-                    {% endif %}
-                {% endfor %}
-                <p class="article-content mt-2"> {{ recipe.description }} </p>
-                <hr>
-                <p class="article-content"><i> From {{ recipe.source }} </i></p>
-            </div>
-        </article>
-    {% endfor %}
-    {% for page_num in recipes.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-        {% if page_num %}
-            {% if recipes.page == page_num %}
-                <a class="btn btn-info mb-4" href="{{ url_for('users.recipes', page=page_num) }}">{{ page_num }}</a>
-            {% else %}
-                <a class="btn btn-outline-info mb-4" href="{{ url_for('users.recipes', page=page_num) }}">{{ page_num }}</a>
-            {% endif %}
-        {% else %}
-            ...
-        {% endif %}
-    {% endfor %}
+</article>
+{% endfor %}
+{% for page_num in recipes.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+{% if page_num %}
+{% if recipes.page == page_num %}
+<a class="btn btn-info mb-4" href="{{ url_for('users.recipes', page=page_num) }}">{{ page_num }}</a>
+{% else %}
+<a class="btn btn-outline-info mb-4" href="{{ url_for('users.recipes', page=page_num) }}">{{ page_num }}</a>
+{% endif %}
+{% else %}
+...
+{% endif %}
+{% endfor %}
 {% endblock content %}

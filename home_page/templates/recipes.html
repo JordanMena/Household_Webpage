@@ -2,7 +2,7 @@
 {% block content %}
 <h1>Recipes</h1>
 <div>
-    <a class="btn btn-light btn-sm mt-1 mb-1" href="{{ url_for('users.new_recipe') }}">New Recipe</a>
+    <a class="btn btn-info btn-sm mt-1 mb-1" href="{{ url_for('users.new_recipe') }}">New Recipe</a>
 </div>
 <hr>
 {% for recipe in recipes.items %}

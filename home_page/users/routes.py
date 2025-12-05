@@ -137,8 +137,9 @@ def new_recipe():
         db.session.commit()
         flash('Your recipe has been added!', 'success')
         return redirect(url_for('users.recipes'))
+    tags = Tag.query.order_by(Tag.name).all()
     return render_template('add_recipe.html', title='New Recipe',
-                           form=form, legend='New Recipe')
+                           form=form, legend='New Recipe', all_tags=tags)
 
 
 @users.route("/recipe/<int:recipe_id>/update", methods=['GET', 'POST'])
@@ -168,8 +169,9 @@ def update_recipe(recipe_id):
         form.notes.data = recipe.notes
         form.source.data = recipe.source
         form.tags.data = recipe.tags
+    tags = Tag.query.order_by(Tag.name).all()
     return render_template('add_recipe.html', title='Update Recipe',
-                           form=form, legend='Update Recipe')
+                           form=form, legend='Update Recipe', all_tags=tags)
 
 
 @users.route("/recipe/<int:recipe_id>/delete", methods=['POST'])

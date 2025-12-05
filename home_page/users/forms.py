@@ -100,7 +100,12 @@ class TagListField(StringField):
         if self.data:
             names = []
             for tag in self.data:
-                names.append(tag.name)
+                if isinstance(tag, str):
+                    names.append(tag)
+                elif hasattr(tag, 'name'):
+                    names.append(tag.name)
+                else:
+                    names.append(str(tag))
             return u'|'.join(names)
         else:
             return u''

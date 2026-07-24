@@ -1,66 +1,64 @@
 {% extends "recipes_layout.html" %}
 {% block content %}
-    <article class="media content-section">
-      <div class="media-body">
-          <div class="article-metadata">
-              <div class="d-flex justify-content-end">
-                  <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{{ url_for('users.update_recipe', recipe_id = recipe.id)  }}">Update</a>
-                      <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal" data-target="#deleteModal">Delete</button>
-              </div>
-          </div>
-          <h2 class="article-title">{{ recipe.name }}</h2>
-          <div class="align-middle text-center">
-              <img class="rounded article-img w-75 h-75" src="{{ url_for('static', filename='recipe_photos/' + recipe.image_file) }}">
-          </div></br>
-          {% for tag in recipe.tags %}
-            {% if tag.name == 'vegetarian' %}
-                <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-success">{{ tag.name }}</a>
-            {% elif tag.name == 'meat' %}
-                <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-danger">{{ tag.name }}</a>
-            {% else %}
-                <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-primary">{{ tag.name }}</a>
-            {% endif %}
-          {% endfor %}
-          </br>
-          <p></p>
-          <h4 class="article-title"> Description </h4>
-          <p class="article-content">{{ recipe.description }}</p>
-          <hr>
-          <h4 class="article-title"> Ingredients </h4>
-          {% for ingredient in recipe.ingredients.split('|') %}
-            <li>{{ ingredient }}</li>
-          {% endfor %}
-          <hr>
-          <h4 class="article-title"> Directions </h4>
-          <p class="article-content">{{ recipe.directions }}</p>
-          <hr>
-          <h4 class="article-title"> Notes </h4>
-          <p class="article-content">{{ recipe.notes }}</p>
-          <hr>
-          <h5 class="article-title"> From: </h5>
-          <a href="{{ recipe.url }}">{{ recipe.source }}</a>
-      </div>
-    </article>
-<!-- Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="deleteModalLabel">Delete Recipe?</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            Recipes can't be recovered once deleted.
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-              <form action="{{ url_for('users.delete_recipe', recipe_id=recipe.id) }}" method="POST">
-                  <input class="btn btn-danger" type="submit" value="Delete">
-              </form>
-          </div>
-        </div>
+<article class="media content-section">
+  <div class="media-body">
+    <div class="article-metadata">
+      <div class="d-flex justify-content-end">
+        <a class="btn btn-secondary btn-sm mt-1 mb-1"
+          href="{{ url_for('users.update_recipe', recipe_id = recipe.id)  }}">Update</a>
+        <button type="button" class="btn btn-danger btn-sm m-1" data-toggle="modal"
+          data-target="#deleteModal">Delete</button>
       </div>
     </div>
+    <h2 class="article-title">{{ recipe.name }}</h2>
+    <div class="align-middle text-center">
+      <img class="rounded article-img w-75 h-75"
+        src="{{ url_for('static', filename='recipe_photos/' + recipe.image_file) }}">
+    </div></br>
+    {% for tag in recipe.tags %}
+    <a href="{{ url_for('users.tag', tag_id=tag.id) }}" class="badge badge-{{ tag.color }}">{{ tag.name }}</a>
+    {% endfor %}
+    </br>
+    <p></p>
+    <h4 class="article-title"> Description </h4>
+    <p class="article-content">{{ recipe.description }}</p>
+    <hr>
+    <h4 class="article-title"> Ingredients </h4>
+    {% for ingredient in recipe.ingredients.split('|') %}
+    <li>{{ ingredient }}</li>
+    {% endfor %}
+    <hr>
+    <h4 class="article-title"> Directions </h4>
+    <p class="article-content">{{ recipe.directions }}</p>
+    <hr>
+    <h4 class="article-title"> Notes </h4>
+    <p class="article-content">{{ recipe.notes }}</p>
+    <hr>
+    <h5 class="article-title"> From: </h5>
+    <a href="{{ recipe.url }}">{{ recipe.source }}</a>
+  </div>
+</article>
+<!-- Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Delete Recipe?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Recipes can't be recovered once deleted.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <form action="{{ url_for('users.delete_recipe', recipe_id=recipe.id) }}" method="POST">
+          <input class="btn btn-danger" type="submit" value="Delete">
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}

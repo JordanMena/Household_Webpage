@@ -1,6 +1,6 @@
 {% extends "recipes_layout.html" %}
 {% block content %}
-<div class = "content-section">
+<div class="content-section">
     <!-- must set enctype to this val to disable character encoding for file upload -->
     <form method="POST" action="" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
@@ -109,22 +109,52 @@
                 {{ form.picture.label() }}
                 {{ form.picture(class="form-control-file") }}
                 {% if form.picture.errors %}
-                    {% for error in form.picture.errors %}
-                        <span class="text-danger">{{ error }}</span></br>
-                    {% endfor %}
+                {% for error in form.picture.errors %}
+                <span class="text-danger">{{ error }}</span></br>
+                {% endfor %}
                 {% endif %}
             </div>
+            <!-- TAGS -->
             <div class="form-group">
-                {{ form.tags.label(class="form-control-label") }}<p class="text-muted">(Separate with '|')</p>
+                {% set tag_names = [] %}
+                {% if form.tags.data %}
+                {% for tag in form.tags.data %}
+                {% if tag is string %}
+                {% set _ = tag_names.append(tag) %}
+                {% elif tag.name is defined %}
+                {% set _ = tag_names.append(tag.name) %}
+                {% else %}
+                {% set _ = tag_names.append(tag|string) %}
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                {{ form.tags(class="d-none", id="tags", value=tag_names|join('|')) }}
+                <label>Tags</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Available Tags</h5>
+                        <div id="available-tags" class="border p-2 rounded"
+                            style="min-height: 100px; max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                            {% for tag in all_tags %}
+                            <span class="badge badge-{{ tag.color }} m-1 tag-item" data-tag-name="{{ tag.name }}"
+                                style="cursor: pointer; user-select: none;">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Associated Tags</h5>
+                        <div id="associated-tags" class="border p-2 rounded"
+                            style="min-height: 100px; max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
                 {% if form.tags.errors %}
-                {{ form.tags(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
+                <div class="invalid-feedback d-block">
                     {% for error in form.tags.errors %}
                     <span>{{ error }}</span>
                     {% endfor %}
                 </div>
-                {% else %}
-                {{ form.tags(class="form-control form-control-lg") }}
                 {% endif %}
             </div>
         </fieldset>
@@ -134,3 +164,68 @@
     </form>
 </div>
 {% endblock content %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const availableContainer = document.getElementById('available-tags');
+        const associatedContainer = document.getElementById('associated-tags');
+        const hiddenInput = document.getElementById('tags');
+
+        if (!availableContainer || !associatedContainer || !hiddenInput) {
+            console.error("Tag UI elements not found");
+            return;
+        }
+
+        // Helper to update hidden input
+        function updateHiddenInput() {
+            const tags = Array.from(associatedContainer.children).map(el => el.dataset.tagName);
+            hiddenInput.value = tags.join('|');
+        }
+
+        // Move tag function
+        function moveTag(tagElement, targetContainer) {
+            targetContainer.appendChild(tagElement);
+
+            // Sort tags alphabetically in the target container
+            const sortedTags = Array.from(targetContainer.children).sort((a, b) => {
+                return a.textContent.trim().localeCompare(b.textContent.trim());
+            });
+            targetContainer.innerHTML = '';
+            sortedTags.forEach(tag => targetContainer.appendChild(tag));
+
+            updateHiddenInput();
+        }
+
+        // Event delegation
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('tag-item')) {
+                const parent = e.target.parentElement;
+                if (parent === availableContainer) {
+                    moveTag(e.target, associatedContainer);
+                } else if (parent === associatedContainer) {
+                    moveTag(e.target, availableContainer);
+                }
+            }
+        });
+
+        // Initialize from hidden input
+        if (hiddenInput.value) {
+            const currentTags = hiddenInput.value.split('|').filter(t => t);
+            currentTags.forEach(tagName => {
+                // Find by data attribute
+                const tagEl = Array.from(availableContainer.children).find(el => el.dataset.tagName === tagName);
+                if (tagEl) {
+                    associatedContainer.appendChild(tagEl);
+                }
+            });
+            // Sort associated container after initialization
+            const sortedTags = Array.from(associatedContainer.children).sort((a, b) => {
+                return a.textContent.trim().localeCompare(b.textContent.trim());
+            });
+            associatedContainer.innerHTML = '';
+            sortedTags.forEach(tag => associatedContainer.appendChild(tag));
+        }
+    });
+</script>
+{% endblock scripts %}

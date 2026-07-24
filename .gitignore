@@ -5,3 +5,4 @@ venv/
 !home_page/static/site_logo.png
 *.jpg
 __pycache__
+.venv

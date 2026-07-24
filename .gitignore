@@ -1,4 +1,5 @@
 venv/
+.venv/
 *.db
 *.png
 !home_page/static/site_logo.png

@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Gunicorn 21.2 supports the Python 3.9 version used on Debian 11.
+gunicorn==21.2.0

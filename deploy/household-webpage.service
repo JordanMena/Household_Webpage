@@ -6,10 +6,10 @@ After=network.target
 Type=simple
 User=jmena
 Group=jmena
-WorkingDirectory=/home/debian/Household_Webpage
+WorkingDirectory=/home/jmena/Household_Webpage
 EnvironmentFile=-/etc/default/household-webpage
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/debian/Household_Webpage/.venv/bin/gunicorn --workers 1 --bind 0.0.0.0:8000 --access-logfile - --error-logfile - wsgi:app
+ExecStart=/home/jmena/Household_Webpage/.venv/bin/gunicorn --workers 1 --bind 0.0.0.0:8000 --access-logfile - --error-logfile - wsgi:app
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30

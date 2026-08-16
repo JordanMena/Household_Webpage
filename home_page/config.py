@@ -18,6 +18,7 @@ class Config:
         or file_config.get('SQLALCHEMY_DATABASE_URI')
         or 'sqlite:///' + os.path.join(basedir, 'site.db')
     )
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True

@@ -17,6 +17,9 @@ class User(db.Model, UserMixin):
     image_file = db.Column(db.String(20), nullable=False, default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
     posts = db.relationship("Post", backref='author', lazy=True)
+    maintenance_completions = db.relationship(
+        'MaintenanceCompletion', backref='completed_by', lazy=True
+    )
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -94,3 +97,45 @@ class Tag(db.Model):
 
     def __init__(self, name):
         self.name = name
+
+
+class MaintenanceTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    first_due_date = db.Column(db.Date, nullable=False)
+    next_due_date = db.Column(db.Date, nullable=True, index=True)
+    recurrence_interval = db.Column(db.Integer, nullable=False, default=1)
+    recurrence_unit = db.Column(db.String(10), nullable=False, default='once')
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    completions = db.relationship(
+        'MaintenanceCompletion',
+        backref='task',
+        lazy=True,
+        cascade='all, delete-orphan',
+    )
+
+    @property
+    def is_recurring(self):
+        return self.recurrence_unit != 'once'
+
+    def recurrence_label(self):
+        if not self.is_recurring:
+            return 'One time'
+        unit = self.recurrence_unit
+        if self.recurrence_interval != 1:
+            unit += 's'
+        return f'Every {self.recurrence_interval} {unit}'
+
+
+class MaintenanceCompletion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(
+        db.Integer, db.ForeignKey('maintenance_task.id'), nullable=False, index=True
+    )
+    scheduled_due_date = db.Column(db.Date, nullable=False)
+    completed_date = db.Column(db.Date, nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    completed_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)

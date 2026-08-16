@@ -16,10 +16,11 @@ mail = Mail()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
     from home_page.users.routes import users
     from home_page.posts.routes import posts
     from home_page.main.routes import main
+    from home_page.maintenance.routes import maintenance
     from home_page.errors.handlers import errors
 
     db.init_app(app)
@@ -30,6 +31,7 @@ def create_app(config_class=Config):
     app.register_blueprint(users)
     app.register_blueprint(posts)
     app.register_blueprint(main)
+    app.register_blueprint(maintenance)
     app.register_blueprint(errors)
 
     return app

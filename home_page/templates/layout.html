@@ -40,12 +40,22 @@
           <div class="navbar-nav mr-auto">
             <a class="nav-item nav-link" href="{{ url_for('main.home') }}">Home</a>
             <a class="nav-item nav-link" href="{{ url_for('users.recipes') }}">Recipes</a>
+            {% if current_user.is_authenticated %}
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="maintenanceDropdown" role="button"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Maintenance</a>
+              <div class="dropdown-menu" aria-labelledby="maintenanceDropdown">
+                <a class="dropdown-item" href="{{ url_for('maintenance.index') }}">Task overview</a>
+                <a class="dropdown-item" href="{{ url_for('maintenance.new_task') }}">Add task</a>
+                <a class="dropdown-item" href="{{ url_for('maintenance.calendar_view') }}">Calendar</a>
+              </div>
+            </div>
+            {% endif %}
             <a class="nav-item nav-link" href="{{ url_for('main.about') }}">About</a>
           </div>
           <!-- Navbar Right Side -->
           <div class="navbar-nav">
             {% if current_user.is_authenticated %}
-            <a class="nav-item nav-link" href="{{ url_for('posts.new_post') }}">New Post</a>
             <a class="nav-item nav-link" href="{{ url_for('users.account') }}">Account</a>
             <a class="nav-item nav-link" href="{{ url_for('users.logout') }}">Logout</a>
             {% else %}
@@ -59,7 +69,7 @@
   </header>
   <main role="main" class="container">
     <div class="row">
-      <div class="col-md-8">
+      <div class="{% block main_column_class %}col-md-8{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}

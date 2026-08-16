@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block main_column_class %}col-12{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="mb-1">Home maintenance</h1>
+      <p class="text-muted mb-0">Recurring and one-off work around the house.</p>
+    </div>
+    <div class="mt-3 mt-md-0">
+      <a class="btn btn-outline-info" href="{{ url_for('maintenance.calendar_view') }}">Calendar</a>
+      <a class="btn btn-primary ml-1" href="{{ url_for('maintenance.new_task') }}">Add task</a>
+    </div>
+  </div>
+
+  {% if overdue_tasks %}
+    <section class="content-section overdue-panel">
+      <h2 class="h3 text-danger">Overdue</h2>
+      {% with tasks=overdue_tasks, empty_message='' %}
+        {% include 'maintenance/_task_list.html' %}
+      {% endwith %}
+    </section>
+  {% endif %}
+
+  <section class="content-section">
+    <h2 class="h3">Upcoming</h2>
+    {% with tasks=upcoming_tasks, empty_message='No upcoming tasks.' %}
+      {% include 'maintenance/_task_list.html' %}
+    {% endwith %}
+  </section>
+
+  {% if completed_one_offs %}
+    <section class="content-section">
+      <h2 class="h4">Completed one-off tasks</h2>
+      {% with tasks=completed_one_offs, empty_message='' %}
+        {% include 'maintenance/_task_list.html' %}
+      {% endwith %}
+    </section>
+  {% endif %}
+
+  {% if inactive_tasks %}
+    <section class="content-section">
+      <h2 class="h4">Archived or paused</h2>
+      {% with tasks=inactive_tasks, empty_message='' %}
+        {% include 'maintenance/_task_list.html' %}
+      {% endwith %}
+    </section>
+  {% endif %}
+{% endblock content %}

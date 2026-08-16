@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="content-section">
+    <h1 class="h2">Complete {{ task.name }}</h1>
+    <p>
+      Signing off the instance due
+      <strong>{{ task.next_due_date.strftime('%B %d, %Y') }}</strong>.
+    </p>
+    <form method="POST" action="">
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        {{ form.completed_date.label(class="form-control-label") }}
+        {% if form.completed_date.errors %}
+          {{ form.completed_date(class="form-control is-invalid") }}
+          <div class="invalid-feedback">{% for error in form.completed_date.errors %}<span>{{ error }}</span>{% endfor %}</div>
+        {% else %}
+          {{ form.completed_date(class="form-control") }}
+        {% endif %}
+        <small class="form-text text-muted">Use the day the work was actually completed.</small>
+      </div>
+      <div class="form-group">
+        {{ form.notes.label(class="form-control-label") }}
+        {{ form.notes(class="form-control", rows="4", placeholder="Parts used, observations, or anything useful next time") }}
+      </div>
+      {{ form.submit(class="btn btn-success") }}
+      <a class="btn btn-link" href="{{ url_for('maintenance.task_detail', task_id=task.id) }}">Cancel</a>
+    </form>
+  </div>
+{% endblock content %}

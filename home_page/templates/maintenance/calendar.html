@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block main_column_class %}col-12{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="mb-1">Maintenance calendar</h1>
+      <p class="text-muted mb-0">Current due dates for active tasks.</p>
+    </div>
+    <a class="btn btn-primary mt-3 mt-md-0" href="{{ url_for('maintenance.new_task') }}">Add task</a>
+  </div>
+
+  {% if overdue_count %}
+    <div class="alert alert-danger">
+      <strong>{{ overdue_count }} overdue task{% if overdue_count != 1 %}s{% endif %}.</strong>
+      Some may be due before this displayed month.
+      <a class="alert-link" href="{{ url_for('maintenance.index') }}">Review overdue tasks</a>.
+    </div>
+  {% endif %}
+
+  <section class="content-section calendar-section">
+    <div class="calendar-toolbar">
+      <a class="btn btn-outline-info" aria-label="Previous month"
+        href="{{ url_for('maintenance.calendar_view', year=previous_year, month=previous_month) }}">&larr;</a>
+      <h2 class="h3 mb-0">{{ month_name }} {{ year }}</h2>
+      <a class="btn btn-outline-info" aria-label="Next month"
+        href="{{ url_for('maintenance.calendar_view', year=next_year, month=next_month) }}">&rarr;</a>
+    </div>
+
+    <div class="calendar-scroll">
+      <div class="maintenance-calendar">
+        {% for day_name in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
+          <div class="calendar-weekday">{{ day_name }}</div>
+        {% endfor %}
+        {% for week in weeks %}
+          {% for day in week %}
+            <div class="calendar-day {% if day.month != month %}outside-month{% endif %} {% if day == today %}today{% endif %}">
+              <div class="calendar-date">{{ day.day }}</div>
+              {% for task in tasks_by_date.get(day, []) %}
+                <a class="calendar-task {% if day < today %}calendar-task-overdue{% endif %}"
+                  href="{{ url_for('maintenance.task_detail', task_id=task.id) }}">{{ task.name }}</a>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock content %}

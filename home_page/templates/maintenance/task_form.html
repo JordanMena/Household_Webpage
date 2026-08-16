@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="content-section">
+    <form method="POST" action="">
+      {{ form.hidden_tag() }}
+      <fieldset class="form-group">
+        <legend class="border-bottom mb-4">{{ legend }}</legend>
+
+        <div class="form-group">
+          {{ form.name.label(class="form-control-label") }}
+          {% if form.name.errors %}
+            {{ form.name(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">{% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}</div>
+          {% else %}
+            {{ form.name(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.description.label(class="form-control-label") }}
+          {{ form.description(class="form-control", rows="5") }}
+        </div>
+
+        <div class="form-group">
+          {{ form.first_due_date.label(class="form-control-label") }}
+          {% if form.first_due_date.errors %}
+            {{ form.first_due_date(class="form-control is-invalid") }}
+            <div class="invalid-feedback">{% for error in form.first_due_date.errors %}<span>{{ error }}</span>{% endfor %}</div>
+          {% else %}
+            {{ form.first_due_date(class="form-control") }}
+          {% endif %}
+          <small class="form-text text-muted">The schedule remains anchored to this date.</small>
+        </div>
+
+        <div class="form-row align-items-end">
+          <div class="form-group col-sm-5">
+            {{ form.recurrence_interval.label(class="form-control-label") }}
+            {% if form.recurrence_interval.errors %}
+              {{ form.recurrence_interval(class="form-control is-invalid", min="1") }}
+              <div class="invalid-feedback">{% for error in form.recurrence_interval.errors %}<span>{{ error }}</span>{% endfor %}</div>
+            {% else %}
+              {{ form.recurrence_interval(class="form-control", min="1") }}
+            {% endif %}
+          </div>
+          <div class="form-group col-sm-7">
+            {{ form.recurrence_unit.label(class="form-control-label") }}
+            {{ form.recurrence_unit(class="form-control") }}
+          </div>
+        </div>
+        <p class="small text-muted">For a one-off task, the repeat number is ignored.</p>
+
+        <div class="form-group form-check">
+          {{ form.is_active(class="form-check-input") }}
+          {{ form.is_active.label(class="form-check-label") }}
+          <small class="form-text text-muted">Inactive tasks keep their history but do not appear as due.</small>
+        </div>
+      </fieldset>
+      <div class="form-group">
+        {{ form.submit(class="btn btn-primary") }}
+        <a class="btn btn-link" href="{% if task %}{{ url_for('maintenance.task_detail', task_id=task.id) }}{% else %}{{ url_for('maintenance.index') }}{% endif %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+{% endblock content %}

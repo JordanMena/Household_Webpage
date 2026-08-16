@@ -1,0 +1,24 @@
+{% if tasks %}
+  <div class="task-list">
+    {% for task in tasks %}
+      <div class="task-list-item">
+        <div>
+          <a class="task-name" href="{{ url_for('maintenance.task_detail', task_id=task.id) }}">{{ task.name }}</a>
+          {% if task.next_due_date %}
+            <div class="small {% if task.next_due_date < today %}text-danger{% else %}text-muted{% endif %}">
+              Due {{ task.next_due_date.strftime('%b %d, %Y') }} &middot; {{ task.recurrence_label() }}
+            </div>
+          {% else %}
+            <div class="small text-muted">Complete &middot; {{ task.recurrence_label() }}</div>
+          {% endif %}
+        </div>
+        {% if task.is_active and task.next_due_date %}
+          <a class="btn {% if task.next_due_date < today %}btn-danger{% else %}btn-outline-success{% endif %} btn-sm"
+            href="{{ url_for('maintenance.complete_task', task_id=task.id) }}">Complete</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-muted mb-0">{{ empty_message }}</p>
+{% endif %}

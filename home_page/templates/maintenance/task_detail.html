@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+{% block content %}
+  <article class="content-section">
+    <div class="d-flex flex-wrap justify-content-between align-items-start">
+      <div>
+        <h1 class="mb-2">{{ task.name }}</h1>
+        {% if not task.is_active %}
+          <span class="badge badge-secondary">Inactive</span>
+        {% elif task.next_due_date is none %}
+          <span class="badge badge-success">Complete</span>
+        {% elif task.next_due_date < today %}
+          <span class="badge badge-danger">Overdue</span>
+        {% else %}
+          <span class="badge badge-info">Upcoming</span>
+        {% endif %}
+      </div>
+      <a class="btn btn-outline-secondary mt-2 mt-sm-0" href="{{ url_for('maintenance.edit_task', task_id=task.id) }}">Edit</a>
+    </div>
+
+    {% if task.description %}
+      <p class="article-content mt-4">{{ task.description }}</p>
+    {% endif %}
+
+    <dl class="row mt-4 mb-0">
+      <dt class="col-sm-4">Schedule</dt>
+      <dd class="col-sm-8">{{ task.recurrence_label() }}</dd>
+      <dt class="col-sm-4">First due</dt>
+      <dd class="col-sm-8">{{ task.first_due_date.strftime('%B %d, %Y') }}</dd>
+      <dt class="col-sm-4">Current due</dt>
+      <dd class="col-sm-8">
+        {% if task.next_due_date %}
+          <span class="{% if task.next_due_date < today %}text-danger font-weight-bold{% endif %}">{{ task.next_due_date.strftime('%B %d, %Y') }}</span>
+        {% else %}
+          Completed
+        {% endif %}
+      </dd>
+    </dl>
+
+    {% if task.is_active and task.next_due_date %}
+      <a class="btn {% if task.next_due_date < today %}btn-danger{% else %}btn-success{% endif %} mt-3"
+        href="{{ url_for('maintenance.complete_task', task_id=task.id) }}">Mark current instance complete</a>
+    {% endif %}
+  </article>
+
+  <section class="content-section">
+    <h2 class="h3">Completion history</h2>
+    {% if completions %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Due</th><th>Completed</th><th>By</th><th>Notes</th></tr></thead>
+          <tbody>
+            {% for completion in completions %}
+              <tr>
+                <td>{{ completion.scheduled_due_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ completion.completed_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ completion.completed_by.username if completion.completed_by else 'Unknown' }}</td>
+                <td class="completion-notes">{{ completion.notes or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No completions have been recorded yet.</p>
+    {% endif %}
+  </section>
+
+  {% if task.is_active %}
+    <form method="POST" action="{{ url_for('maintenance.archive_task', task_id=task.id) }}" class="mb-4">
+      {{ archive_form.hidden_tag() }}
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Archive task</button>
+      <small class="text-muted ml-2">The completion history will be retained.</small>
+    </form>
+  {% endif %}
+{% endblock content %}

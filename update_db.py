@@ -38,3 +38,12 @@ def update_db():
 
 if __name__ == '__main__':
     update_db()
+
+    # SQLAlchemy safely creates newly introduced tables without modifying
+    # existing household data or completion history.
+    from home_page import create_app, db
+
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+        print("Created any missing application tables.")

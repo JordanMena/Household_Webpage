@@ -154,6 +154,12 @@ a.article-title:hover {
   padding: 0.75rem;
 }
 
+/* Bootstrap fixes selects at a height sized for its smaller default padding.
+   Match their height to this site's roomier form-control padding. */
+select.form-control:not([size]):not([multiple]) {
+  height: calc(1.5em + 1.5rem + 2px);
+}
+
 .form-control:focus {
   border-color: var(--secondary-color);
   box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
@@ -180,6 +186,10 @@ a.article-title:hover {
 /* Household dashboard and maintenance */
 .overdue-panel {
   border-left: 5px solid #dc3545;
+}
+
+.freezer-warning-panel {
+  border-left: 5px solid #f0ad4e;
 }
 
 .task-list {
@@ -295,6 +305,43 @@ a.article-title:hover {
 .calendar-task-overdue:hover {
   color: #491217;
   background: #f1b0b7;
+}
+
+/* Freezer inventory */
+.inventory-controls {
+  padding: 1rem 1.25rem;
+}
+
+.freezer-column {
+  height: calc(100% - 25px);
+}
+
+.inventory-list {
+  border-top: 1px solid #edf2f7;
+}
+
+.inventory-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.inventory-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.inventory-item-old {
+  margin-right: -0.5rem;
+  margin-left: -0.5rem;
+  padding-right: 0.5rem;
+  padding-left: 0.5rem;
+  background: #fff8e5;
+  border-left: 3px solid #f0ad4e;
+}
+
+.inventory-description {
+  color: #4a5568;
+  white-space: pre-line;
 }
 
 @media (max-width: 767.98px) {

@@ -139,3 +139,33 @@ class MaintenanceCompletion(db.Model):
     notes = db.Column(db.Text, nullable=True)
     recorded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     completed_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+
+class FreezerItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    freezer_location = db.Column(db.String(20), nullable=False, index=True)
+    quantity = db.Column(db.Float, nullable=True)
+    unit = db.Column(db.String(30), nullable=True)
+    date_added = db.Column(db.Date, nullable=False, index=True)
+    warning_months = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    @property
+    def location_label(self):
+        labels = {
+            'upstairs': 'Upstairs fridge freezer',
+            'basement': 'Basement deep freeze',
+        }
+        return labels.get(self.freezer_location, self.freezer_location)
+
+    @property
+    def quantity_label(self):
+        if self.quantity is None:
+            return ''
+        quantity = f'{self.quantity:g}'
+        return f'{quantity} {self.unit or ""}'.strip()

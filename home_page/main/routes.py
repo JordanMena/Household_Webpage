@@ -3,7 +3,8 @@ from datetime import date, timedelta
 from flask import render_template, Blueprint
 from flask_login import current_user
 
-from home_page.models import MaintenanceTask
+from home_page.freezer.aging import is_old_item
+from home_page.models import FreezerItem, MaintenanceTask
 
 main = Blueprint('main', __name__)
 
@@ -12,6 +13,7 @@ main = Blueprint('main', __name__)
 def home():
     overdue_tasks = []
     due_soon_tasks = []
+    old_freezer_items = []
     today = date.today()
     if current_user.is_authenticated:
         overdue_tasks = MaintenanceTask.query.filter(
@@ -23,9 +25,14 @@ def home():
             MaintenanceTask.next_due_date >= today,
             MaintenanceTask.next_due_date <= today + timedelta(days=30),
         ).order_by(MaintenanceTask.next_due_date).all()
+        old_freezer_items = [
+            item for item in FreezerItem.query.order_by(FreezerItem.date_added).all()
+            if is_old_item(item, today)
+        ]
     return render_template(
         'home.html', overdue_tasks=overdue_tasks,
         due_soon_tasks=due_soon_tasks, today=today,
+        old_freezer_items=old_freezer_items,
         title='The Mena-Kelly Household'
     )
 

@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="content-section">
+    <form method="POST" action="">
+      {{ form.hidden_tag() }}
+      <fieldset class="form-group">
+        <legend class="border-bottom mb-4">{{ legend }}</legend>
+
+        <div class="form-group">
+          {{ form.name.label(class="form-control-label") }}
+          {% if form.name.errors %}
+            {{ form.name(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">{% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}</div>
+          {% else %}
+            {{ form.name(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.description.label(class="form-control-label") }}
+          {{ form.description(class="form-control", rows="4", placeholder="Packaging, contents, or other useful details") }}
+        </div>
+
+        <div class="form-group">
+          {{ form.freezer_location.label(class="form-control-label") }}
+          {{ form.freezer_location(class="form-control") }}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-sm-6">
+            {{ form.quantity.label(class="form-control-label") }}
+            {% if form.quantity.errors %}
+              {{ form.quantity(class="form-control is-invalid", min="0.01", step="any") }}
+              <div class="invalid-feedback">{% for error in form.quantity.errors %}<span>{{ error }}</span>{% endfor %}</div>
+            {% else %}
+              {{ form.quantity(class="form-control", min="0.01", step="any", placeholder="Optional") }}
+            {% endif %}
+          </div>
+          <div class="form-group col-sm-6">
+            {{ form.unit.label(class="form-control-label") }}
+            {{ form.unit(class="form-control", placeholder="e.g. portions, packages") }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          {{ form.date_added.label(class="form-control-label") }}
+          {% if form.date_added.errors %}
+            {{ form.date_added(class="form-control is-invalid") }}
+            <div class="invalid-feedback">{% for error in form.date_added.errors %}<span>{{ error }}</span>{% endfor %}</div>
+          {% else %}
+            {{ form.date_added(class="form-control") }}
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.warning_months.label(class="form-control-label") }}
+          {% if form.warning_months.errors %}
+            {{ form.warning_months(class="form-control is-invalid", min="1") }}
+            <div class="invalid-feedback">{% for error in form.warning_months.errors %}<span>{{ error }}</span>{% endfor %}</div>
+          {% else %}
+            {{ form.warning_months(class="form-control", min="1", placeholder="5-month household default") }}
+          {% endif %}
+          <small class="form-text text-muted">Leave blank to use the five-month default.</small>
+        </div>
+      </fieldset>
+
+      {{ form.submit(class="btn btn-primary") }}
+      <a class="btn btn-link" href="{{ url_for('freezer.inventory') }}">Cancel</a>
+    </form>
+  </div>
+
+  {% if item %}
+    <section class="content-section border-danger">
+      <h2 class="h5">Remove this item</h2>
+      <p class="text-muted">Removal permanently deletes it from the inventory.</p>
+      <form method="POST" action="{{ url_for('freezer.delete_item', item_id=item.id) }}"
+        onsubmit='return confirm({{ ("Remove " ~ item.name ~ " from the freezer inventory?")|tojson }});'>
+        {{ delete_form.hidden_tag() }}
+        <button class="btn btn-outline-danger" type="submit">Remove item</button>
+      </form>
+    </section>
+  {% endif %}
+{% endblock content %}

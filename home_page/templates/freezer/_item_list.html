@@ -1,0 +1,31 @@
+{% if items %}
+  <div class="inventory-list">
+    {% for item in items %}
+      <article class="inventory-item {% if item.id in old_item_ids %}inventory-item-old{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h3 class="h5 mb-1">{{ item.name }}</h3>
+            {% if item.quantity_label %}
+              <span class="badge badge-info">{{ item.quantity_label }}</span>
+            {% endif %}
+            {% if item.id in old_item_ids %}
+              <span class="badge badge-warning">Use soon</span>
+            {% endif %}
+          </div>
+          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('freezer.edit_item', item_id=item.id) }}">Edit</a>
+        </div>
+        {% if item.description %}
+          <p class="inventory-description mb-2 mt-2">{{ item.description }}</p>
+        {% endif %}
+        <div class="small text-muted">
+          Added {{ item.date_added.strftime('%b %d, %Y') }}
+          &middot; Warn after {{ item.warning_months or 5 }} months
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-muted mb-0">
+    {% if search %}No matching items in this freezer.{% else %}This freezer is empty.{% endif %}
+  </p>
+{% endif %}

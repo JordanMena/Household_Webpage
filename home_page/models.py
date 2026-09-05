@@ -142,6 +142,7 @@ class MaintenanceCompletion(db.Model):
 
 
 class FreezerItem(db.Model):
+    category = db.Column(db.String(30), nullable=False, default="Misc", server_default="Misc")
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)

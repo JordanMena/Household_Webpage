@@ -1,49 +1,23 @@
-import sqlite3
-import os
+"""Apply additive schema updates to the configured application database."""
+from sqlalchemy import inspect, text
+from home_page import create_app, db
 
-# Path to the database file
-db_path = os.path.join('home_page', 'site.db')
 
 def update_db():
-    if not os.path.exists(db_path):
-        print(f"Database not found at {db_path}")
-        return
-
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    try:
-        # Check if the column already exists
-        cursor.execute("PRAGMA table_info(tag)")
-        columns = [info[1] for info in cursor.fetchall()]
-        
+    db.create_all()
+    with db.engine.begin() as connection:
+        columns = {column['name'] for column in inspect(connection).get_columns('tag')}
         if 'color' not in columns:
-            print("Adding 'color' column to 'tag' table...")
-            cursor.execute("ALTER TABLE tag ADD COLUMN color TEXT NOT NULL DEFAULT 'primary'")
-            
-            # Update existing special tags
-            print("Updating default colors for 'meat' and 'vegetarian'...")
-            cursor.execute("UPDATE tag SET color = 'danger' WHERE name = 'meat'")
-            cursor.execute("UPDATE tag SET color = 'success' WHERE name = 'vegetarian'")
-            
-            conn.commit()
-            print("Database updated successfully.")
-        else:
-            print("'color' column already exists.")
-            
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        conn.close()
+            connection.execute(text("ALTER TABLE tag ADD COLUMN color TEXT NOT NULL DEFAULT 'primary'"))
+            connection.execute(text("UPDATE tag SET color = 'danger' WHERE name = 'meat'"))
+            connection.execute(text("UPDATE tag SET color = 'success' WHERE name = 'vegetarian'"))
+        columns = {column['name'] for column in inspect(connection).get_columns('freezer_item')}
+        if 'category' not in columns:
+            connection.execute(text("ALTER TABLE freezer_item ADD COLUMN category VARCHAR(30) NOT NULL DEFAULT 'Misc'"))
+    print("Database schema is up to date.")
+
 
 if __name__ == '__main__':
-    update_db()
-
-    # SQLAlchemy safely creates newly introduced tables without modifying
-    # existing household data or completion history.
-    from home_page import create_app, db
-
     app = create_app()
     with app.app_context():
-        db.create_all()
-        print("Created any missing application tables.")
+        update_db()

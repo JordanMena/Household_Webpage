@@ -5,6 +5,7 @@
         <div class="d-flex justify-content-between align-items-start">
           <div>
             <h3 class="h5 mb-1">{{ item.name }}</h3>
+            <span class="badge freezer-category freezer-category-{{ item.category|lower|replace(" ", "-")|replace("/", "-") }}">{{ item.category }}</span>
             {% if item.quantity_label %}
               <span class="badge badge-info">{{ item.quantity_label }}</span>
             {% endif %}
@@ -26,6 +27,6 @@
   </div>
 {% else %}
   <p class="text-muted mb-0">
-    {% if search %}No matching items in this freezer.{% else %}This freezer is empty.{% endif %}
+    {% if search or category or location %}No matching items in this freezer.{% else %}This freezer is empty.{% endif %}
   </p>
 {% endif %}

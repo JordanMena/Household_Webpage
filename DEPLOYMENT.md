@@ -110,6 +110,7 @@ After pulling tested code, install any dependency changes and restart:
 cd /home/debian/Household_Webpage
 git pull --ff-only
 .venv/bin/python -m pip install -r requirements-production.txt
+.venv/bin/python update_db.py
 sudo systemctl restart household-webpage
 systemctl status household-webpage
 ```

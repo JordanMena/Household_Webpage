@@ -357,3 +357,46 @@ select.form-control:not([size]):not([multiple]) {
     padding: 0.75rem;
   }
 }
+
+/* Muted category colours retain readable text and explicit category names. */
+.freezer-category {
+  padding: 0.35em 0.6em;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #46515f;
+  background-color: #e9edf1;
+}
+
+.freezer-category-meal-prep {
+  color: #205b53;
+  background-color: #dceee8;
+}
+
+.freezer-category-single-meal {
+  color: #294f7a;
+  background-color: #e0ebf7;
+}
+
+.freezer-category-leftovers {
+  color: #84452e;
+  background-color: #f6e5dc;
+}
+
+.freezer-category-carbs {
+  color: #715719;
+  background-color: #f3eccf;
+}
+
+.freezer-category-fruits-veg-spices {
+  color: #42602e;
+  background-color: #e6eedb;
+}
+
+.freezer-category-desserts {
+  color: #704264;
+  background-color: #f0e1ed;
+}
+
+.freezer-category-misc {
+  color: #46515f;
+  background-color: #e9edf1;
+}

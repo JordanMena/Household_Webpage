@@ -6,7 +6,14 @@ from wtforms.fields.html5 import DateField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, ValidationError
 
 
+from home_page.freezer.categories import CATEGORIES, DEFAULT_CATEGORY
+
+
 class FreezerItemForm(FlaskForm):
+    category = SelectField(
+        "Category", choices=[(name, name) for name in CATEGORIES],
+        default=DEFAULT_CATEGORY, validators=[DataRequired()],
+    )
     name = StringField('Item name', validators=[DataRequired(), Length(max=120)])
     description = TextAreaField('Description or notes', validators=[Optional()])
     freezer_location = SelectField(

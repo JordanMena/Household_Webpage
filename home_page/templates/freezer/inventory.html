@@ -11,12 +11,27 @@
 
   <form method="GET" action="{{ url_for('freezer.inventory') }}" class="content-section inventory-controls">
     <div class="form-row align-items-end">
-      <div class="form-group col-md-7 mb-md-0">
+      <div class="form-group col-md-4 mb-md-0">
         <label for="inventory-search">Search inventory</label>
         <input id="inventory-search" class="form-control" type="search" name="q" value="{{ search }}"
           placeholder="Search names, descriptions, or units">
       </div>
-      <div class="form-group col-md-3 mb-md-0">
+      <div class="form-group col-md-2 mb-md-0">
+        <label for="inventory-category">Category</label>
+        <select id="inventory-category" class="form-control" name="category">
+          <option value="">All categories</option>
+          {% for name in categories %}<option value="{{ name }}" {% if category == name %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group col-md-2 mb-md-0">
+        <label for="inventory-location">Freezer</label>
+        <select id="inventory-location" class="form-control" name="location">
+          <option value="">Both freezers</option>
+          <option value="upstairs" {% if location == 'upstairs' %}selected{% endif %}>Upstairs</option>
+          <option value="basement" {% if location == 'basement' %}selected{% endif %}>Basement</option>
+        </select>
+      </div>
+      <div class="form-group col-md-2 mb-md-0">
         <label for="inventory-sort">Sort</label>
         <select id="inventory-sort" class="form-control" name="sort">
           <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
@@ -28,8 +43,8 @@
         <button class="btn btn-outline-info btn-block" type="submit">Apply</button>
       </div>
     </div>
-    {% if search %}
-      <a class="small d-inline-block mt-2" href="{{ url_for('freezer.inventory', sort=sort) }}">Clear search</a>
+    {% if search or category or location %}
+      <a class="small d-inline-block mt-2" href="{{ url_for('freezer.inventory', sort=sort) }}">Clear filters</a>
     {% endif %}
   </form>
 

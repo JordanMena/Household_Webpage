@@ -6,3 +6,4 @@ venv/
 *.jpg
 __pycache__
 .venv
+home_page/*.db.before-categories-*.bak

@@ -163,3 +163,54 @@ class TestFreezerRoutes(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'cannot be in the future', response.data)
         self.assertEqual(FreezerItem.query.count(), 0)
+
+    def test_category_defaults_validation_and_move(self):
+        data = dict(name='Category test', freezer_location='upstairs',
+                    date_added=date.today().isoformat())
+        self.client.post('/freezer/new', data=data)
+        item = FreezerItem.query.one()
+        self.assertEqual(item.category, 'Misc')
+        for category in ('Meal Prep', 'Single Meal', 'Leftovers', 'Carbs',
+                         'Fruits/Veg/Spices', 'Desserts', 'Misc'):
+            data.update(category=category, freezer_location='basement')
+            self.client.post(f'/freezer/{item.id}/edit', data=data)
+            self.assertEqual(item.category, category)
+            self.assertEqual(item.freezer_location, 'basement')
+            response = self.client.get(f'/freezer/{item.id}/edit')
+            self.assertIn(('selected value="' + category + '"').encode(), response.data)
+        data['category'] = 'Invalid'
+        response = self.client.post(f'/freezer/{item.id}/edit', data=data)
+        self.assertIn(b'Not a valid choice', response.data)
+        self.assertEqual(item.category, 'Misc')
+
+    def test_category_and_location_filters_combine_with_search(self):
+        for name, category, location in (
+            ('Soup batch', 'Meal Prep', 'upstairs'),
+            ('Soup portion', 'Meal Prep', 'basement'),
+            ('Soup leftover', 'Leftovers', 'basement'),
+            ('Pasta batch', 'Meal Prep', 'basement'),
+        ):
+            db.session.add(FreezerItem(name=name, category=category,
+                                      freezer_location=location, date_added=date.today()))
+        db.session.commit()
+        response = self.client.get('/freezer/?category=Meal+Prep')
+        self.assertIn(b'Soup batch', response.data)
+        self.assertIn(b'Soup portion', response.data)
+        self.assertNotIn(b'Soup leftover', response.data)
+        response = self.client.get('/freezer/?category=Meal+Prep&location=basement&q=Soup')
+        self.assertIn(b'Soup portion', response.data)
+        for excluded in (b'Soup batch', b'Soup leftover', b'Pasta batch'):
+            self.assertNotIn(excluded, response.data)
+
+    def test_migration_backfills_existing_items_and_can_repeat(self):
+        from update_db import update_db
+        db.session.remove()
+        with db.engine.begin() as connection:
+            connection.execute('DROP TABLE freezer_item')
+            connection.execute("CREATE TABLE freezer_item (id INTEGER PRIMARY KEY, name TEXT)")
+            connection.execute("INSERT INTO freezer_item (name) VALUES ('Existing food')")
+        update_db()
+        update_db()
+        with db.engine.connect() as connection:
+            row = connection.execute('SELECT name, category FROM freezer_item').fetchone()
+            self.assertEqual(tuple(row), ('Existing food', 'Misc'))

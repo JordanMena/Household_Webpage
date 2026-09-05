@@ -6,6 +6,7 @@ from sqlalchemy import or_
 
 from home_page import db
 from home_page.freezer.aging import is_old_item
+from home_page.freezer.categories import CATEGORIES
 from home_page.freezer.forms import DeleteFreezerItemForm, FreezerItemForm
 from home_page.models import FreezerItem
 
@@ -18,7 +19,17 @@ freezer = Blueprint('freezer', __name__, url_prefix='/freezer')
 def inventory():
     search = request.args.get('q', '').strip()
     sort = request.args.get('sort', 'oldest')
+    category = request.args.get("category", "")
+    location = request.args.get("location", "")
+    if category not in CATEGORIES:
+        category = ""
+    if location not in ("upstairs", "basement"):
+        location = ""
     query = FreezerItem.query
+    if category:
+        query = query.filter_by(category=category)
+    if location:
+        query = query.filter_by(freezer_location=location)
     if search:
         pattern = f'%{search}%'
         query = query.filter(or_(
@@ -44,6 +55,7 @@ def inventory():
         'freezer/inventory.html', title='Freezer Inventory',
         upstairs_items=upstairs_items, basement_items=basement_items,
         search=search, sort=sort, old_item_ids=old_item_ids,
+        category=category, categories=CATEGORIES, location=location,
         delete_form=DeleteFreezerItemForm(), today=today,
     )
 
@@ -54,6 +66,7 @@ def new_item():
     form = FreezerItemForm()
     if form.validate_on_submit():
         item = FreezerItem(
+            category=form.category.data,
             name=form.name.data.strip(),
             description=form.description.data,
             freezer_location=form.freezer_location.data,
@@ -78,6 +91,7 @@ def edit_item(item_id):
     item = FreezerItem.query.get_or_404(item_id)
     form = FreezerItemForm()
     if form.validate_on_submit():
+        item.category = form.category.data
         item.name = form.name.data.strip()
         item.description = form.description.data
         item.freezer_location = form.freezer_location.data
@@ -89,6 +103,7 @@ def edit_item(item_id):
         flash(f'{item.name} updated.', 'success')
         return redirect(url_for('freezer.inventory'))
     if request.method == 'GET':
+        form.category.data = item.category
         form.name.data = item.name
         form.description.data = item.description
         form.freezer_location.data = item.freezer_location

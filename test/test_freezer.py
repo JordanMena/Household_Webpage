@@ -214,3 +214,28 @@ class TestFreezerRoutes(TestCase):
         with db.engine.connect() as connection:
             row = connection.execute('SELECT name, category FROM freezer_item').fetchone()
             self.assertEqual(tuple(row), ('Existing food', 'Misc'))
+
+    def test_category_sort_is_default_in_both_freezers(self):
+        from home_page.freezer.categories import CATEGORIES
+        for location in ('upstairs', 'basement'):
+            for rank, category in enumerate(CATEGORIES):
+                db.session.add(FreezerItem(
+                    name=f'{location} item {rank}', category=category,
+                    freezer_location=location,
+                    date_added=date.today() - timedelta(days=rank),
+                ))
+            db.session.add(FreezerItem(
+                name=f'{location} older prep', category='Meal Prep',
+                freezer_location=location, date_added=date.today() - timedelta(days=20),
+            ))
+        db.session.commit()
+        for query in ('', '?sort=category', '?sort=invalid'):
+            response = self.client.get('/freezer/' + query)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'value="category" selected', response.data)
+            for location in ('upstairs', 'basement'):
+                names = [f'{location} older prep'] + [f'{location} item {i}' for i in range(7)]
+                positions = [response.data.index(name.encode()) for name in names]
+                self.assertEqual(positions, sorted(positions))
+        response = self.client.get('/freezer/?sort=oldest')
+        self.assertLess(response.data.index(b'upstairs item 6'), response.data.index(b'upstairs item 0'))

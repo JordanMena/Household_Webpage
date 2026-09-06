@@ -2,7 +2,7 @@ from datetime import date
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
-from sqlalchemy import or_
+from sqlalchemy import case, or_
 
 from home_page import db
 from home_page.freezer.aging import is_old_item
@@ -18,7 +18,7 @@ freezer = Blueprint('freezer', __name__, url_prefix='/freezer')
 @login_required
 def inventory():
     search = request.args.get('q', '').strip()
-    sort = request.args.get('sort', 'oldest')
+    sort = request.args.get('sort', 'category')
     category = request.args.get("category", "")
     location = request.args.get("location", "")
     if category not in CATEGORIES:
@@ -38,13 +38,18 @@ def inventory():
             FreezerItem.unit.ilike(pattern),
         ))
 
+    category_order = case(
+        [(FreezerItem.category == name, rank) for rank, name in enumerate(CATEGORIES)],
+        else_=len(CATEGORIES),
+    )
     sort_options = {
+        'category': (category_order.asc(), FreezerItem.date_added.asc(), FreezerItem.name.asc()),
         'oldest': (FreezerItem.date_added.asc(), FreezerItem.name.asc()),
         'newest': (FreezerItem.date_added.desc(), FreezerItem.name.asc()),
         'name': (FreezerItem.name.asc(), FreezerItem.date_added.asc()),
     }
     if sort not in sort_options:
-        sort = 'oldest'
+        sort = 'category'
     items = query.order_by(*sort_options[sort]).all()
     upstairs_items = [item for item in items if item.freezer_location == 'upstairs']
     basement_items = [item for item in items if item.freezer_location == 'basement']

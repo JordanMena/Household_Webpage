@@ -34,6 +34,7 @@
       <div class="form-group col-md-2 mb-md-0">
         <label for="inventory-sort">Sort</label>
         <select id="inventory-sort" class="form-control" name="sort">
+          <option value="category" {% if sort == 'category' %}selected{% endif %}>Category</option>
           <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
           <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
           <option value="name" {% if sort == 'name' %}selected{% endif %}>Name</option>

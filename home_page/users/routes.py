@@ -1,9 +1,11 @@
-from flask import render_template, url_for, flash, redirect, request, Blueprint, g
+from flask import render_template, url_for, flash, redirect, request, Blueprint, g, jsonify
+from werkzeug.datastructures import MultiDict
+from home_page.users.recipe_data import decode_import, IMPORT_PROMPT, ingredients_text, parse_ingredients, parse_steps, normalized_url
 from flask_login import login_user, current_user, logout_user, login_required
 from home_page import bcrypt, db
 from home_page.models import User, Post, Recipe, Tag
 from home_page.users.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
-                                   RequestResetForm, ResetPasswordForm, AddRecipeForm, AddTagForm)
+                                   RequestResetForm, ResetPasswordForm, AddRecipeForm, AddTagForm, RecipeImportForm)
 from home_page.users.utils import (save_profile_pic, save_recipe_photo, send_reset_email,
                                    paginate_list, iter_pages)
 
@@ -123,55 +125,80 @@ def recipes():
 
 @users.route("/recipes/new", methods=['GET', 'POST'])
 def new_recipe():
-    form = AddRecipeForm()
-    if form.validate_on_submit():
-        recipe = Recipe(name=form.name.data, description=form.description.data,
-                        ingredients=form.ingredients.data, directions=form.directions.data,
-                        source=form.source.data, notes=form.notes.data,
-                        url=form.url.data)
-        recipe.tags = form.tags.data.copy()
-        if form.picture.data:
-            picture_file = save_recipe_photo(form.picture.data)
-            recipe.image_file = picture_file
-        db.session.add(recipe)
-        db.session.commit()
-        flash('Your recipe has been added!', 'success')
-        return redirect(url_for('users.recipes'))
-    tags = Tag.query.order_by(Tag.name).all()
-    return render_template('add_recipe.html', title='New Recipe',
-                           form=form, legend='New Recipe', all_tags=tags)
+    return recipe_editor()
 
 
 @users.route("/recipe/<int:recipe_id>/update", methods=['GET', 'POST'])
 def update_recipe(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
+    return recipe_editor(Recipe.query.get_or_404(recipe_id))
+
+
+def matching_recipes(url, exclude_id=None):
+    if not url:
+        return []
+    target = normalized_url(url)
+    return [item for item in Recipe.query.filter(Recipe.url.isnot(None)).all()
+            if item.id != exclude_id and normalized_url(item.url) == target]
+
+
+@users.route('/recipes/import', methods=['POST'])
+def import_recipe():
+    import_form = RecipeImportForm()
+    if not import_form.validate_on_submit():
+        return jsonify(errors=import_form.errors), 400
+    try:
+        values = decode_import(import_form.recipe_json.data)
+    except ValueError as error:
+        return jsonify(errors={'recipe_json': [str(error)]}), 400
+    values['csrf_token'] = request.form.get('csrf_token', '')
+    form = AddRecipeForm(MultiDict(values))
+    if not form.validate():
+        return jsonify(errors=form.errors), 400
+    values.pop('csrf_token', None)
+    values['tags'] = form.tags.data
+    duplicates = matching_recipes(values['url'], request.form.get('recipe_id', type=int))
+    return jsonify(values=values, duplicates=[{
+        'name': item.name, 'url': url_for('users.recipe', recipe_id=item.id)
+    } for item in duplicates])
+
+
+def recipe_editor(recipe=None):
+    editing = recipe is not None
     form = AddRecipeForm()
+    duplicates = []
     if form.validate_on_submit():
-        recipe.name = form.name.data
-        recipe.description = form.description.data
-        recipe.ingredients = form.ingredients.data
-        recipe.directions = form.directions.data
-        recipe.source = form.source.data
-        recipe.notes = form.notes.data
-        recipe.url = form.url.data
-        recipe.tags = form.tags.data.copy()
-        if form.picture.data:
-            picture_file = save_recipe_photo(form.picture.data)
-            recipe.image_file = picture_file
-        db.session.commit()
-        flash("Recipe has been updated!", 'success')
-        return redirect(url_for('users.recipe', recipe_id=recipe.id))
-    elif request.method == 'GET':
-        form.name.data = recipe.name
-        form.description.data = recipe.description
-        form.ingredients.data = recipe.ingredients
-        form.directions.data = recipe.directions
-        form.notes.data = recipe.notes
-        form.source.data = recipe.source
-        form.tags.data = recipe.tags
+        duplicates = matching_recipes(form.url.data.strip(), recipe.id if editing else None)
+        if not duplicates or request.form.get('allow_duplicate') == 'yes':
+            recipe = recipe if editing else Recipe()
+            for key in ('name', 'description', 'notes', 'source', 'url', 'servings'):
+                setattr(recipe, key, (getattr(form, key).data or '').strip())
+            for key in ('prep_time_minutes', 'cook_time_minutes'):
+                setattr(recipe, key, getattr(form, key).data)
+            recipe.ingredient_groups = parse_ingredients(form.ingredients.data)
+            recipe.direction_steps = parse_steps(form.directions.data)
+            recipe.ingredients = '|'.join(item for group in recipe.ingredient_groups for item in group['ingredients'])
+            recipe.directions = '\n\n'.join(recipe.direction_steps)
+            recipe.tags = form.tags.data.copy()
+            if form.picture.data:
+                recipe.image_file = save_recipe_photo(form.picture.data)
+            db.session.add(recipe)
+            db.session.commit()
+            flash('Your recipe has been saved!', 'success')
+            return redirect(url_for('users.recipe', recipe_id=recipe.id))
+    elif request.method == 'GET' and editing:
+        for key in ('name', 'description', 'notes', 'source', 'url', 'servings', 'prep_time_minutes', 'cook_time_minutes'):
+            getattr(form, key).data = getattr(recipe, key)
+        form.ingredients.data = (ingredients_text(recipe.ingredient_groups) if recipe.ingredient_groups
+                                 else recipe.ingredients.replace('|', '\n'))
+        form.directions.data = '\n\n'.join(recipe.direction_steps) if recipe.direction_steps else recipe.directions
+        form.tags.data = [tag.name for tag in recipe.tags]
     tags = Tag.query.order_by(Tag.name).all()
-    return render_template('add_recipe.html', title='Update Recipe',
-                           form=form, legend='Update Recipe', all_tags=tags)
+    known_names = {tag.name for tag in tags}
+    tags += [dict(name=name, color='primary') for name in (form.tags.data or []) if name not in known_names]
+    title = 'Edit recipe' if editing else 'New recipe'
+    return render_template('add_recipe.html', title=title, form=form, legend=title,
+                           all_tags=tags, recipe=recipe, duplicates=duplicates, import_prompt=IMPORT_PROMPT,
+                           import_json=request.form.get('recipe_json', ''))
 
 
 @users.route("/recipe/<int:recipe_id>/delete", methods=['POST'])

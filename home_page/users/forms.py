@@ -1,8 +1,10 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-from home_page.models import User
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, IntegerField
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional, NumberRange
+from urllib.parse import urlsplit
+from home_page.users.recipe_data import parse_ingredients
+from home_page.models import User, Tag
 from flask_login import current_user
 
 
@@ -112,7 +114,7 @@ class TagListField(StringField):
 
     def process_formdata(self, valuelist):
         if valuelist:
-            self.data = [x.strip() for x in valuelist[0].split(self.separator)]
+            self.data = [x.strip() for x in valuelist[0].split(self.separator) if x.strip()]
             if self.remove_duplicates:
                 self.data = list(self._remove_duplicates(self.data))
             if self.to_lowercase:
@@ -129,16 +131,46 @@ class TagListField(StringField):
 
 
 class AddRecipeForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired(), Length(max=30, message="Shorter name please.")])
+    name = StringField('Recipe name', validators=[DataRequired(), Length(max=160)])
+    servings = StringField('Servings / yield', validators=[Optional(), Length(max=80)])
+    prep_time_minutes = IntegerField('Prep time (minutes)', validators=[Optional(), NumberRange(min=0, max=10080)])
+    cook_time_minutes = IntegerField('Cook time (minutes)', validators=[Optional(), NumberRange(min=0, max=10080)])
     description = TextAreaField('Description', validators=[])
     ingredients = TextAreaField('Ingredients', validators=[DataRequired()])
     directions = TextAreaField('Directions', validators=[DataRequired()])
     picture = FileField('Picture', validators=[FileAllowed(['jpg', 'png'])])
     notes = TextAreaField('Notes', validators=[])
-    source = StringField('Source', validators=[DataRequired(), Length(max=20, message="Too long.")])
+    source = StringField('Source', validators=[Optional(), Length(max=160)])
     url = StringField('URL', validators=[])
     tags = TagListField('Tags', separator='|', validators=[])
-    submit = SubmitField('Post Recipe')
+    submit = SubmitField('Save recipe')
+
+    def validate_ingredients(self, field):
+        try:
+            parse_ingredients(field.data)
+        except ValueError as error:
+            raise ValidationError(str(error))
+
+    def validate_url(self, field):
+        if not field.data or not field.data.strip():
+            return
+        try:
+            parts = urlsplit(field.data.strip())
+            valid = parts.scheme.lower() in ('http', 'https') and parts.hostname and not any(c.isspace() for c in field.data.strip())
+        except ValueError:
+            valid = False
+        if not valid:
+            raise ValidationError('Enter a complete http:// or https:// URL.')
+
+    def validate_tags(self, field):
+        field.data = field.data or []
+        existing = {tag.name.lower() for tag in Tag.query.all()}
+        if any(len(tag) > 20 and tag not in existing for tag in field.data):
+            raise ValidationError('Each tag must be 20 characters or fewer.')
+
+
+class RecipeImportForm(FlaskForm):
+    recipe_json = TextAreaField('Recipe JSON', validators=[DataRequired(), Length(max=100000)])
 
 
 class AddTagForm(FlaskForm):

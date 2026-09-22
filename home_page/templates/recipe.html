@@ -11,6 +11,11 @@
       </div>
     </div>
     <h2 class="article-title">{{ recipe.name }}</h2>
+    <div class="d-flex flex-wrap mb-3">
+      {% if recipe.servings %}<span class="mr-4">Servings / yield: {{ recipe.servings }}</span>{% endif %}
+      {% if recipe.prep_time_minutes is not none %}<span class="mr-4">Prep: {{ recipe.prep_time_minutes }} min</span>{% endif %}
+      {% if recipe.cook_time_minutes is not none %}<span>Cook: {{ recipe.cook_time_minutes }} min</span>{% endif %}
+    </div>
     <div class="align-middle text-center">
       <img class="rounded article-img w-75 h-75"
         src="{{ url_for('static', filename='recipe_photos/' + recipe.image_file) }}">
@@ -20,22 +25,39 @@
     {% endfor %}
     </br>
     <p></p>
-    <h4 class="article-title"> Description </h4>
+    {% if recipe.description %}<h4 class="article-title"> Description </h4>
     <p class="article-content">{{ recipe.description }}</p>
-    <hr>
+    <hr>{% endif %}
     <h4 class="article-title"> Ingredients </h4>
+    {% if recipe.ingredient_groups %}
+    {% for group in recipe.ingredient_groups %}
+    {% if group.name %}<h5>{{ group.name }}</h5>{% endif %}
+    <ul>{% for ingredient in group.ingredients %}<li>{{ ingredient }}</li>{% endfor %}</ul>
+    {% endfor %}
+    {% else %}
+    <ul>
     {% for ingredient in recipe.ingredients.split('|') %}
     <li>{{ ingredient }}</li>
     {% endfor %}
+    </ul>
+    {% endif %}
     <hr>
     <h4 class="article-title"> Directions </h4>
-    <p class="article-content">{{ recipe.directions }}</p>
+    {% if recipe.direction_steps %}
+    <ol>{% for step in recipe.direction_steps %}<li class="article-content mb-3">{{ step }}</li>{% endfor %}</ol>
+    {% else %}<p class="article-content">{{ recipe.directions }}</p>{% endif %}
+    {% if recipe.notes %}
     <hr>
     <h4 class="article-title"> Notes </h4>
     <p class="article-content">{{ recipe.notes }}</p>
+    {% endif %}
+    {% if recipe.source or recipe.url %}
     <hr>
     <h5 class="article-title"> From: </h5>
-    <a href="{{ recipe.url }}">{{ recipe.source }}</a>
+    {% if recipe.url and (recipe.url.startswith('https://') or recipe.url.startswith('http://')) %}
+    <a href="{{ recipe.url }}">{{ recipe.source or recipe.url }}</a>
+    {% else %}{{ recipe.source or recipe.url }}{% endif %}
+    {% endif %}
   </div>
 </article>
 <!-- Modal -->

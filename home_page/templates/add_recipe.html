@@ -1,119 +1,61 @@
 {% extends "recipes_layout.html" %}
+{% macro field(input, help='', rows=none) %}
+<div class="form-group">
+  {{ input.label(class="form-control-label") }}
+  {% if rows %}{{ input(class="form-control" + (' is-invalid' if input.errors else ''), rows=rows, **{'aria-describedby': input.id + '-help'}) }}
+  {% else %}{{ input(class="form-control" + (' is-invalid' if input.errors else ''), **{'aria-describedby': input.id + '-help'}) }}{% endif %}
+  <small id="{{ input.id }}-help" class="form-text text-muted">{{ help }}</small>
+  {% for error in input.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+</div>
+{% endmacro %}
 {% block content %}
-<div class="content-section">
-    <!-- must set enctype to this val to disable character encoding for file upload -->
-    <form method="POST" action="" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">{{ legend }}</legend>
-            <!-- NAME -->
-            <div class="form-group">
-                {{ form.name.label(class="form-control-label") }}
-                {% if form.name.errors %}
-                {{ form.name(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.name.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.name(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- DESCRIPTION -->
-            <div class="form-group">
-                {{ form.description.label(class="form-control-label") }}
-                {% if form.description.errors %}
-                {{ form.description(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.description.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.description(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- INGREDIENTS -->
-            <div class="form-group">
-                {{ form.ingredients.label(class="form-control-label") }}
-                {% if form.ingredients.errors %}
-                {{ form.ingredients(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.ingredients.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.ingredients(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- DIRECTIONS -->
-            <div class="form-group">
-                {{ form.directions.label(class="form-control-label") }}
-                {% if form.directions.errors %}
-                {{ form.directions(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.directions.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.directions(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- NOTES -->
-            <div class="form-group">
-                {{ form.notes.label(class="form-control-label") }}
-                {% if form.notes.errors %}
-                {{ form.notes(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.notes.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.notes(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- SOURCE -->
-            <div class="form-group">
-                {{ form.source.label(class="form-control-label") }}
-                {% if form.source.errors %}
-                {{ form.source(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.source.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.source(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- URL -->
-            <div class="form-group">
-                {{ form.url.label(class="form-control-label") }}
-                {% if form.url.errors %}
-                {{ form.url(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.title.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.url(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <!-- PICTURE -->
-            <div class="form-group">
-                {{ form.picture.label() }}
-                {{ form.picture(class="form-control-file") }}
-                {% if form.picture.errors %}
-                {% for error in form.picture.errors %}
-                <span class="text-danger">{{ error }}</span></br>
-                {% endfor %}
-                {% endif %}
-            </div>
+<div class="content-section recipe-editor">
+  <h1 class="h3">{{ legend }}</h1>
+  <p class="text-muted">Start from scratch or paste a recipe, then review and save.</p>
+  <div class="mb-3" role="group" aria-label="Recipe entry method">
+    <button type="button" class="btn btn-outline-info" id="manual-mode" aria-pressed="{{ 'false' if import_json else 'true' }}">Enter manually</button>
+    <button type="button" class="btn btn-outline-info" id="import-mode" aria-expanded="{{ 'true' if import_json else 'false' }}" aria-controls="import-panel">Paste recipe JSON</button>
+  </div>
+  <section id="import-panel" class="border rounded p-3 mb-4" {% if not import_json %}hidden{% endif %}>
+    <p>Copy the instructions into your LLM with a recipe URL or text. Paste its JSON response here.</p>
+    <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="copy-prompt">Copy LLM instructions</button>
+    <details><summary>View instructions / copy manually</summary><textarea id="llm-prompt" class="form-control mt-2" rows="10" readonly aria-label="LLM instructions">{{ import_prompt }}</textarea></details>
+    <label for="recipe-json" class="mt-3">Recipe JSON</label>
+    <textarea id="recipe-json" name="recipe_json" form="recipe-form" class="form-control" rows="9" spellcheck="false" placeholder='{"schema_version": 1, ...}'>{{ import_json }}</textarea>
+    <p class="small text-muted mt-2">Loading replaces the recipe text and tags below. Your selected photo stays attached. Nothing is saved until you choose Save recipe.</p>
+    <button type="button" class="btn btn-info" id="load-import">Load into form</button>
+    <div id="import-status" class="mt-2" role="status" aria-live="polite"></div>
+  </section>
+  <div id="import-duplicates" class="alert alert-warning" hidden></div>
+  <form method="POST" enctype="multipart/form-data" id="recipe-form" data-import-url="{{ url_for('users.import_recipe') }}" data-recipe-id="{{ recipe.id if recipe else '' }}">
+    {{ form.hidden_tag() }}
+    {% if form.errors %}<div class="alert alert-danger" role="alert">Please correct the highlighted fields. Your recipe text has been kept. If you selected a photo, please select it again.
+    {% if form.csrf_token is defined %}{% for error in form.csrf_token.errors %}<div>{{ error }}</div>{% endfor %}{% endif %}</div>{% endif %}
+    {% if duplicates %}<div class="alert alert-warning">
+      A recipe with this source URL already exists:
+      {% for item in duplicates %}<a href="{{ url_for('users.recipe', recipe_id=item.id) }}" target="_blank" rel="noopener">{{ item.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}.
+      <div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="allow_duplicate" value="yes" id="allow-duplicate"><label class="form-check-label" for="allow-duplicate">Save this recipe anyway</label></div>
+      {% if form.picture.data %}<p class="mb-0">Please reselect your photo before saving.</p>{% endif %}
+    </div>{% endif %}
+    {{ field(form.name, 'Required · up to 160 characters') }}
+    <div class="row">
+      <div class="col-lg-4">{{ field(form.servings, 'Optional · e.g. 4–6 or 12 muffins') }}</div>
+      <div class="col-lg-4">{{ field(form.prep_time_minutes, 'Optional · whole minutes') }}</div>
+      <div class="col-lg-4">{{ field(form.cook_time_minutes, 'Optional · whole minutes') }}</div>
+    </div>
+    {{ field(form.ingredients, 'Required · one ingredient per line. For groups, add a heading such as ## Sauce on its own line.', 10) }}
+    {{ field(form.directions, 'Required · leave a blank line between steps. Steps are numbered automatically.', 10) }}
+    <details class="mb-4" id="steps-preview"><summary>Preview numbered steps</summary><ol id="steps-list" class="mt-2"></ol></details>
+    <h2 class="h5 border-bottom pb-2">Optional details</h2>
+    {{ field(form.description, '', 3) }}
+    {{ field(form.notes, 'Substitutions, missing source details, or your own tips.', 3) }}
+    {{ field(form.source, 'Website, cookbook, or person · up to 160 characters') }}
+    {{ field(form.url, 'Original recipe link, beginning with http:// or https://') }}
+    <div class="form-group">
+      {{ form.picture.label() }} {{ form.picture(class="form-control-file", accept=".jpg,.png") }}
+      {% if recipe %}<small class="form-text text-muted">Leave empty to keep the current photo.</small>{% endif %}
+      {% for error in form.picture.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+    </div>
             <!-- TAGS -->
             <div class="form-group">
                 {% set tag_names = [] %}
@@ -157,75 +99,14 @@
                 </div>
                 {% endif %}
             </div>
-        </fieldset>
-        <div class="form-group">
-            {{ form.submit(class="btn btn-outline-info") }}
-        </div>
-    </form>
+    <div class="form-group">
+      <label for="new-tag">Create a tag</label>
+      <div class="input-group"><input id="new-tag" class="form-control" maxlength="20" placeholder="New tag name"><div class="input-group-append"><button type="button" class="btn btn-outline-secondary" id="add-tag">Add tag</button></div></div>
+      <small class="form-text text-muted">New tags are created when you save the recipe.</small>
+      <div id="tag-status" role="status" class="small text-danger"></div>
+    </div>
+    <div class="mt-4">{{ form.submit(class="btn btn-info") }} <a class="btn btn-link" href="{{ url_for('users.recipe', recipe_id=recipe.id) if recipe else url_for('users.recipes') }}">Cancel</a></div>
+  </form>
 </div>
-{% endblock content %}
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const availableContainer = document.getElementById('available-tags');
-        const associatedContainer = document.getElementById('associated-tags');
-        const hiddenInput = document.getElementById('tags');
-
-        if (!availableContainer || !associatedContainer || !hiddenInput) {
-            console.error("Tag UI elements not found");
-            return;
-        }
-
-        // Helper to update hidden input
-        function updateHiddenInput() {
-            const tags = Array.from(associatedContainer.children).map(el => el.dataset.tagName);
-            hiddenInput.value = tags.join('|');
-        }
-
-        // Move tag function
-        function moveTag(tagElement, targetContainer) {
-            targetContainer.appendChild(tagElement);
-
-            // Sort tags alphabetically in the target container
-            const sortedTags = Array.from(targetContainer.children).sort((a, b) => {
-                return a.textContent.trim().localeCompare(b.textContent.trim());
-            });
-            targetContainer.innerHTML = '';
-            sortedTags.forEach(tag => targetContainer.appendChild(tag));
-
-            updateHiddenInput();
-        }
-
-        // Event delegation
-        document.addEventListener('click', function (e) {
-            if (e.target.classList.contains('tag-item')) {
-                const parent = e.target.parentElement;
-                if (parent === availableContainer) {
-                    moveTag(e.target, associatedContainer);
-                } else if (parent === associatedContainer) {
-                    moveTag(e.target, availableContainer);
-                }
-            }
-        });
-
-        // Initialize from hidden input
-        if (hiddenInput.value) {
-            const currentTags = hiddenInput.value.split('|').filter(t => t);
-            currentTags.forEach(tagName => {
-                // Find by data attribute
-                const tagEl = Array.from(availableContainer.children).find(el => el.dataset.tagName === tagName);
-                if (tagEl) {
-                    associatedContainer.appendChild(tagEl);
-                }
-            });
-            // Sort associated container after initialization
-            const sortedTags = Array.from(associatedContainer.children).sort((a, b) => {
-                return a.textContent.trim().localeCompare(b.textContent.trim());
-            });
-            associatedContainer.innerHTML = '';
-            sortedTags.forEach(tag => associatedContainer.appendChild(tag));
-        }
-    });
-</script>
-{% endblock scripts %}
+{% endblock %}
+{% block scripts %}<script src="{{ static_url('recipe-editor.js') }}" defer></script>{% endblock %}

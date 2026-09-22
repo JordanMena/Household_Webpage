@@ -14,6 +14,22 @@ def update_db():
         columns = {column['name'] for column in inspect(connection).get_columns('freezer_item')}
         if 'category' not in columns:
             connection.execute(text("ALTER TABLE freezer_item ADD COLUMN category VARCHAR(30) NOT NULL DEFAULT 'Misc'"))
+        columns = {column['name'] for column in inspect(connection).get_columns('recipe')}
+        for name, sql_type in (
+            ('servings', 'VARCHAR(80)'), ('prep_time_minutes', 'INTEGER'),
+            ('cook_time_minutes', 'INTEGER'), ('ingredient_groups', 'JSON'),
+            ('direction_steps', 'JSON'),
+        ):
+            if name not in columns:
+                connection.execute(text(f'ALTER TABLE recipe ADD COLUMN {name} {sql_type}'))
+        # SQLite does not enforce VARCHAR lengths. Other supported deployments
+        # need their column widths updated explicitly.
+        if connection.dialect.name == 'postgresql':
+            connection.execute(text('ALTER TABLE recipe ALTER COLUMN name TYPE VARCHAR(160)'))
+            connection.execute(text('ALTER TABLE recipe ALTER COLUMN source TYPE VARCHAR(160)'))
+        elif connection.dialect.name in ('mysql', 'mariadb'):
+            connection.execute(text('ALTER TABLE recipe MODIFY name VARCHAR(160) NOT NULL'))
+            connection.execute(text('ALTER TABLE recipe MODIFY source VARCHAR(160) NULL'))
     print("Database schema is up to date.")
 
 

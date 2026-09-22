@@ -58,12 +58,17 @@ recipe_tags = db.Table('recipe_tags',
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30), nullable=False)
+    name = db.Column(db.String(160), nullable=False)
+    servings = db.Column(db.String(80), nullable=True)
+    prep_time_minutes = db.Column(db.Integer, nullable=True)
+    cook_time_minutes = db.Column(db.Integer, nullable=True)
+    ingredient_groups = db.Column(db.JSON, nullable=True)
+    direction_steps = db.Column(db.JSON, nullable=True)
     description = db.Column(db.Text, nullable=False, default='No description')
     image_file = db.Column(db.String(30), nullable=False, default='default.jpg')
     ingredients = db.Column(db.Text, nullable=False)
     directions = db.Column(db.Text, nullable=False)
-    source = db.Column(db.String(20), nullable=True)
+    source = db.Column(db.String(160), nullable=True)
     url = db.Column(db.Text, nullable=True)
     notes = db.Column(db.Text, nullable=True)
     _tags = db.relationship('Tag', secondary=recipe_tags, lazy='subquery', backref=db.backref('recipes', lazy=True))
@@ -90,7 +95,7 @@ class Tag(db.Model):
     def get_or_create(cls, name):
         """Only add tags to the database that don't exist yet. If tag already
         exists return a reference to the tag otherwise a new instance"""
-        tag = cls.query.filter(cls.name == name).first()
+        tag = cls.query.filter(db.func.lower(cls.name) == name.lower()).first()
         if not tag:
             tag = cls(name)
         return tag

@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from unittest import TestCase
 
 from home_page import bcrypt, create_app, db
-from home_page.maintenance.scheduling import next_future_due, next_scheduled_date
+from home_page.maintenance.scheduling import next_due_date
 from home_page.models import MaintenanceCompletion, MaintenanceTask, User
 
 
@@ -16,34 +16,43 @@ class TestConfig:
 
 
 class TestMaintenanceScheduling(TestCase):
-    def test_month_end_schedule_keeps_anchor_day(self):
-        anchor = date(2025, 1, 31)
-        february = next_scheduled_date(anchor, 1, 'month', anchor)
-        march = next_scheduled_date(february, 1, 'month', anchor)
-        self.assertEqual(february, date(2025, 2, 28))
-        self.assertEqual(march, date(2025, 3, 31))
+    def test_next_due_is_one_interval_after_completion(self):
+        cases = [
+            (date(2026, 10, 10), 5, 'day', date(2026, 10, 15)),
+            (date(2026, 10, 10), 2, 'week', date(2026, 10, 24)),
+            (date(2026, 11, 15), 3, 'month', date(2027, 2, 15)),
+            (date(2026, 10, 10), 2, 'year', date(2028, 10, 10)),
+        ]
+        for completed, interval, unit, expected in cases:
+            with self.subTest(unit=unit):
+                self.assertEqual(next_due_date(completed, interval, unit), expected)
 
-    def test_yearly_leap_day_returns_to_february_29(self):
-        anchor = date(2024, 2, 29)
-        due = anchor
-        for _ in range(4):
-            due = next_scheduled_date(due, 1, 'year', anchor)
-        self.assertEqual(due, date(2028, 2, 29))
-
-    def test_overdue_schedule_advances_to_first_future_date(self):
-        next_due = next_future_due(
-            date(2026, 1, 1), 1, 'month', date(2026, 1, 1),
-            today=date(2026, 8, 14),
+    def test_month_end_uses_completion_day_and_clamps_short_months(self):
+        self.assertEqual(
+            next_due_date(date(2025, 1, 31), 1, 'month'), date(2025, 2, 28)
         )
-        self.assertEqual(next_due, date(2026, 9, 1))
+        self.assertEqual(
+            next_due_date(date(2025, 2, 28), 1, 'month'), date(2025, 3, 28)
+        )
+
+    def test_yearly_leap_day_clamps_to_end_of_february(self):
+        self.assertEqual(
+            next_due_date(date(2024, 2, 29), 1, 'year'), date(2025, 2, 28)
+        )
+        self.assertEqual(
+            next_due_date(date(2024, 2, 29), 4, 'year'), date(2028, 2, 29)
+        )
 
     def test_one_off_has_no_next_due_date(self):
         self.assertIsNone(
-            next_future_due(
-                date(2026, 8, 1), 1, 'once', date(2026, 8, 1),
-                today=date(2026, 8, 14),
-            )
+            next_due_date(date(2026, 8, 1), 1, 'once')
         )
+
+    def test_invalid_recurrence_is_rejected(self):
+        with self.assertRaises(ValueError):
+            next_due_date(date(2026, 10, 10), 0, 'day')
+        with self.assertRaises(ValueError):
+            next_due_date(date(2026, 10, 10), 1, 'invalid')
 
 
 class TestMaintenanceRoutes(TestCase):
@@ -97,7 +106,60 @@ class TestMaintenanceRoutes(TestCase):
         self.assertEqual(completion.scheduled_due_date, original_due)
         self.assertEqual(completion.completed_by_user_id, self.user_id)
         self.assertEqual(completion.notes, 'Used the final spare filter.')
-        self.assertGreater(task.next_due_date, date.today())
+        self.assertEqual(
+            task.next_due_date,
+            next_due_date(date.today() - timedelta(days=2), 3, 'month'),
+        )
+
+    def test_daily_completion_uses_entered_date_for_early_and_late_tasks(self):
+        today = date.today()
+        cases = [
+            ('Late completion', today - timedelta(days=60), today),
+            ('Early completion', today + timedelta(days=30), today),
+            ('Backdated completion', today - timedelta(days=60),
+             today - timedelta(days=10)),
+            ('Due today after completion', today - timedelta(days=60),
+             today - timedelta(days=5)),
+        ]
+        for name, original_due, completed in cases:
+            with self.subTest(name=name):
+                task = MaintenanceTask(
+                    name=name, first_due_date=original_due,
+                    next_due_date=original_due, recurrence_interval=5,
+                    recurrence_unit='day', is_active=True,
+                )
+                db.session.add(task)
+                db.session.commit()
+                response = self.client.post(
+                    f'/maintenance/{task.id}/complete',
+                    data={'completed_date': completed.isoformat(), 'notes': ''},
+                    follow_redirects=True,
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(task.next_due_date, completed + timedelta(days=5))
+                completion = MaintenanceCompletion.query.filter_by(task_id=task.id).one()
+                self.assertEqual(completion.scheduled_due_date, original_due)
+                self.assertEqual(completion.completed_date, completed)
+                if task.next_due_date < today:
+                    self.assertIn(b'Overdue', response.data)
+
+    def test_repeated_completion_on_same_day_does_not_push_due_date_forward(self):
+        today = date.today()
+        task = MaintenanceTask(
+            name='Repeat completion', first_due_date=today - timedelta(days=60),
+            next_due_date=today - timedelta(days=60), recurrence_interval=5,
+            recurrence_unit='day', is_active=True,
+        )
+        db.session.add(task)
+        db.session.commit()
+        for _ in range(2):
+            response = self.client.post(
+                f'/maintenance/{task.id}/complete',
+                data={'completed_date': today.isoformat(), 'notes': ''},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(task.next_due_date, today + timedelta(days=5))
+        self.assertEqual(MaintenanceCompletion.query.filter_by(task_id=task.id).count(), 2)
 
     def test_one_off_completion_retains_task_and_history(self):
         task = MaintenanceTask(

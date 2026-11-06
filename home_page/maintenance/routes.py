@@ -8,7 +8,7 @@ from home_page import db
 from home_page.maintenance.forms import (
     ArchiveTaskForm, MaintenanceCompletionForm, MaintenanceTaskForm
 )
-from home_page.maintenance.scheduling import next_future_due
+from home_page.maintenance.scheduling import next_due_date
 from home_page.models import MaintenanceCompletion, MaintenanceTask
 
 
@@ -146,12 +146,10 @@ def complete_task(task_id):
             completed_by=current_user,
         )
         db.session.add(completion)
-        task.next_due_date = next_future_due(
-            current_due=task.next_due_date,
+        task.next_due_date = next_due_date(
+            completed_date=form.completed_date.data,
             interval=task.recurrence_interval,
             unit=task.recurrence_unit,
-            anchor_date=task.first_due_date,
-            today=date.today(),
         )
         db.session.commit()
         if task.next_due_date:
